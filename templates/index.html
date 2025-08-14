@@ -264,31 +264,24 @@
       box-shadow: 0 10px 30px -12px rgba(0,0,0,.25);
     }
     #world-map { position: relative; z-index: 1; width: 100%; height: auto; display: block; background: linear-gradient(180deg, color-mix(in oklab, var(--aqua) 3%, transparent), transparent); }
-    #world-land-img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: fill;
-      opacity: .9;
-      filter: saturate(.9) brightness(1.05) contrast(1.1);
-      mix-blend-mode: multiply;
-      pointer-events: none;
-      z-index: 0;
+    /* Land shapes rendered in SVG */
+    #land-layer path {
+      fill: color-mix(in oklab, var(--txt) 10%, transparent);
+      stroke: color-mix(in oklab, var(--txt) 25%, transparent);
+      stroke-width: 0.5;
+      vector-effect: non-scaling-stroke;
     }
     @media (prefers-color-scheme: dark) {
-      #world-land-img {
-        opacity: .95;
-        filter: saturate(1.05) brightness(1.25) contrast(1.2);
-        mix-blend-mode: screen;
+      #land-layer path {
+        fill: color-mix(in oklab, var(--txt) 14%, transparent);
+        stroke: color-mix(in oklab, var(--txt) 35%, transparent);
       }
       .graticule line { stroke: color-mix(in oklab, var(--txt) 28%, transparent); }
       .graticule line.major { stroke: color-mix(in oklab, var(--txt) 40%, transparent); }
     }
-    html[data-theme="dark"] #world-land-img {
-      opacity: .95;
-      filter: saturate(1.05) brightness(1.25) contrast(1.2);
-      mix-blend-mode: screen;
+    html[data-theme="dark"] #land-layer path {
+      fill: color-mix(in oklab, var(--txt) 14%, transparent);
+      stroke: color-mix(in oklab, var(--txt) 35%, transparent);
     }
     html[data-theme="dark"] .graticule line { stroke: color-mix(in oklab, var(--txt) 28%, transparent); }
     html[data-theme="dark"] .graticule line.major { stroke: color-mix(in oklab, var(--txt) 40%, transparent); }
@@ -354,9 +347,8 @@
         <span>Click a city to add/remove it</span>
       </div>
       <div class="map-wrap">
-        <img id="world-land-img" alt="" src="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg" width="1200" height="600" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/World_map_-_low_resolution.svg/1200px-World_map_-_low_resolution.svg.png';">
         <svg id="world-map" viewBox="0 0 1200 600" role="img" aria-label="World map with selectable cities">
-          <!-- world map raster moved to HTML img layer -->
+          <g id="land-layer"></g>
           <g class="graticule" id="graticule"></g>
           <g id="cities-layer"></g>
         </svg>
@@ -376,7 +368,9 @@
     </template>
   </main>
 
-  <script>
+  <script type="module">
+    import { geoEquirectangular, geoPath } from "https://cdn.jsdelivr.net/npm/d3-geo@3/+esm";
+    import { feature } from "https://cdn.jsdelivr.net/npm/topojson-client@3/+esm";
     // Theme handling
     (() => {
       const THEME_KEY = 'worldclock.theme';
@@ -488,11 +482,32 @@
         return clocks.some(c => c.tz === tz);
       }
 
+      async function ensureLand() {
+        const layer = document.getElementById('land-layer');
+        if (!layer || layer.childElementCount) return;
+        try {
+          const resp = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json');
+          const topo = await resp.json();
+          const land = feature(topo, topo.objects.land);
+          const proj = geoEquirectangular().translate([MAP_W / 2, MAP_H / 2]).scale(MAP_W / (2 * Math.PI));
+          const pathGen = geoPath(proj);
+          const ns = 'http://www.w3.org/2000/svg';
+          const path = document.createElementNS(ns, 'path');
+          path.setAttribute('d', pathGen(land) || '');
+          layer.appendChild(path);
+        } catch (err) {
+          // If the land fetch fails, the map will still show graticules and cities
+        }
+      }
+
       function initMap() {
         const svg = document.getElementById('world-map');
         if (!svg) return;
         const grat = document.getElementById('graticule');
         const citiesLayer = document.getElementById('cities-layer');
+
+        // Ensure land layer is rendered
+        ensureLand();
 
         // Draw graticule once
         if (grat && grat.childElementCount === 0) {
