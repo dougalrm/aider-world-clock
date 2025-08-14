@@ -2,59 +2,204 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>World Clock</title>
+  <title>World Clock — Neon</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0d0f1a">
   <style>
-    :root { color-scheme: light dark; }
+    :root {
+      --bg-0: #07070c;
+      --bg-1: #0d0f1a;
+      --txt: #e6f1ff;
+      --sub: #a3b3d3;
+
+      --aqua: #00e5ff;
+      --pink: #ff4dd2;
+      --lime: #b6ff00;
+
+      --card-bg: color-mix(in oklab, white 3%, transparent);
+      --card-bd: color-mix(in oklab, var(--txt) 18%, transparent);
+      --ring: #6ae3ff;
+      color-scheme: dark light;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-0: #fafbff;
+        --bg-1: #f3f7ff;
+        --txt: #0b132b;
+        --sub: #3d4a69;
+        --card-bg: color-mix(in oklab, black 2%, transparent);
+        --card-bd: color-mix(in oklab, black 10%, transparent);
+        --ring: #0088ff;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+    }
+
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
-      line-height: 1.5;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      color: var(--txt);
+      background:
+        radial-gradient(1200px 800px at 80% -20%, color-mix(in oklab, var(--pink) 22%, transparent) 0%, transparent 60%),
+        radial-gradient(1000px 700px at -10% 120%, color-mix(in oklab, var(--aqua) 22%, transparent) 0%, transparent 60%),
+        linear-gradient(180deg, var(--bg-0), var(--bg-1));
       display: grid;
-      min-height: 100vh;
       place-items: center;
-      background: canvas;
-      color: canvastext;
+      line-height: 1.5;
     }
-    main { width: min(900px, 92vw); padding: 2rem; }
-    h1 { margin: 0 0 1rem; font-size: 2rem; text-align: center; }
-    ul.clocks {
+
+    main {
+      width: min(1000px, 92vw);
+      padding: 2rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 1.25rem;
+    }
+
+    h1 {
+      margin: 0 0 .25rem;
+      font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      background: linear-gradient(90deg, var(--aqua), var(--pink), var(--lime));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 0 6px color-mix(in oklab, var(--aqua) 30%, transparent));
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--sub);
+      font-size: .95rem;
+    }
+
+    .clocks {
       list-style: none;
       padding: 0;
-      margin: 1rem 0 0;
+      margin: 1.5rem 0 0;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 1rem;
     }
-    li {
-      border: 1px solid color-mix(in oklab, canvastext 20%, canvas 80%);
-      border-radius: 12px;
-      padding: 1rem;
-      text-align: center;
-      background: color-mix(in oklab, canvas 96%, canvastext 4%);
+
+    .card {
+      position: relative;
+      border-radius: 14px;
+      padding: 1rem 1.25rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-bd);
+      backdrop-filter: saturate(140%) blur(8px);
+      -webkit-backdrop-filter: saturate(140%) blur(8px);
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+      outline: none;
     }
-    h2 { margin: 0 0 .5rem; font-size: 1.1rem; font-weight: 600; }
-    .time { font-variant-numeric: tabular-nums; font-size: 2rem; letter-spacing: 0.02em; }
+
+    .card:focus-within {
+      box-shadow:
+        0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent),
+        0 0 40px -10px color-mix(in oklab, var(--ring) 40%, transparent);
+      border-color: color-mix(in oklab, var(--ring) 40%, var(--card-bd));
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 10px 30px -12px rgba(0,0,0,.35),
+        0 0 24px -8px color-mix(in oklab, var(--accent) 55%, transparent);
+    }
+
+    h2 {
+      margin: 0 0 .35rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: .5rem;
+      color: var(--txt);
+      text-shadow:
+        0 0 6px color-mix(in oklab, var(--accent) 35%, transparent),
+        0 0 16px color-mix(in oklab, var(--accent) 25%, transparent);
+    }
+
+    .tz {
+      font-size: .8rem;
+      color: var(--sub);
+      background: color-mix(in oklab, var(--accent) 18%, transparent);
+      border: 1px solid color-mix(in oklab, var(--accent) 40%, transparent);
+      padding: .1rem .5rem;
+      border-radius: 999px;
+    }
+
+    .time {
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1, "ss01" 1;
+      font-size: clamp(2rem, 5.5vw, 3rem);
+      letter-spacing: 0.04em;
+      text-align: center;
+      line-height: 1.2;
+      color: var(--txt);
+      text-shadow:
+        0 0 12px color-mix(in oklab, var(--accent) 40%, transparent),
+        0 0 28px color-mix(in oklab, var(--accent) 25%, transparent);
+    }
+
+    .date {
+      margin-top: .35rem;
+      font-size: .95rem;
+      color: var(--sub);
+      text-align: center;
+    }
+
+    /* Accent colors per city */
+    .accent-aqua { --accent: var(--aqua); }
+    .accent-pink { --accent: var(--pink); }
+    .accent-lime { --accent: var(--lime); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card { transition: none; }
+      .card:hover { transform: none; box-shadow: none; }
+    }
   </style>
 </head>
 <body>
   <main>
-    <h1>World Clock</h1>
-    <ul class="clocks">
-      <li>
-        <h2>UK (London)</h2>
-        <div class="time" id="clock-london">--:--:--</div>
+    <header>
+      <h1>World Clock</h1>
+      <p class="subtitle">Crisp, neon clocks for key cities. Updates every second.</p>
+    </header>
+
+    <ul class="clocks" role="list">
+      <li class="card accent-aqua" tabindex="0" aria-label="UK London clock">
+        <h2>UK (London) <span class="tz" id="clock-london-tz">—</span></h2>
+        <div class="time" id="clock-london" aria-live="polite" aria-atomic="true">--:--:--</div>
+        <div class="date" id="clock-london-date">—</div>
       </li>
-      <li>
-        <h2>New York City</h2>
-        <div class="time" id="clock-nyc">--:--:--</div>
+
+      <li class="card accent-pink" tabindex="0" aria-label="New York City clock">
+        <h2>New York City <span class="tz" id="clock-nyc-tz">—</span></h2>
+        <div class="time" id="clock-nyc" aria-live="polite" aria-atomic="true">--:--:--</div>
+        <div class="date" id="clock-nyc-date">—</div>
       </li>
-      <li>
-        <h2>Beijing</h2>
-        <div class="time" id="clock-beijing">--:--:--</div>
+
+      <li class="card accent-lime" tabindex="0" aria-label="Beijing clock">
+        <h2>Beijing <span class="tz" id="clock-beijing-tz">—</span></h2>
+        <div class="time" id="clock-beijing" aria-live="polite" aria-atomic="true">--:--:--</div>
+        <div class="date" id="clock-beijing-date">—</div>
       </li>
     </ul>
   </main>
+
   <script>
     const zones = [
       { id: 'clock-london', tz: 'Europe/London' },
@@ -62,25 +207,55 @@
       { id: 'clock-beijing', tz: 'Asia/Shanghai' }, // Beijing uses Asia/Shanghai
     ];
 
-    function formatInZone(ms, timeZone) {
-      return new Intl.DateTimeFormat([], {
+    const timeFormatter = (timeZone) =>
+      new Intl.DateTimeFormat([], {
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
         hour12: false,
         timeZone,
-      }).format(ms);
+      });
+
+    const dateFormatter = (timeZone) =>
+      new Intl.DateTimeFormat([], {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        timeZone,
+      });
+
+    const tzNameFormatter = (timeZone) =>
+      new Intl.DateTimeFormat([], {
+        timeZone,
+        timeZoneName: 'short',
+      });
+
+    function getTimeZoneNameParts(ms, timeZone) {
+      try {
+        const parts = tzNameFormatter(timeZone).formatToParts(ms);
+        const tzPart = parts.find(p => p.type === 'timeZoneName');
+        return tzPart?.value ?? '';
+      } catch {
+        return '';
+      }
     }
 
     function tick() {
       const now = Date.now();
       for (const { id, tz } of zones) {
-        const el = document.getElementById(id);
-        if (!el) continue;
+        const timeEl = document.getElementById(id);
+        const dateEl = document.getElementById(id + '-date');
+        const tzEl = document.getElementById(id + '-tz');
+        if (!timeEl) continue;
         try {
-          el.textContent = formatInZone(now, tz);
+          timeEl.textContent = timeFormatter(tz).format(now);
+          if (dateEl) dateEl.textContent = dateFormatter(tz).format(now);
+          if (tzEl) tzEl.textContent = getTimeZoneNameParts(now, tz);
         } catch {
-          el.textContent = 'Unsupported timezone';
+          timeEl.textContent = 'Unsupported timezone';
+          if (dateEl) dateEl.textContent = '';
+          if (tzEl) tzEl.textContent = '';
         }
       }
     }
