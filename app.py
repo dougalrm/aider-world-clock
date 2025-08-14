@@ -8,6 +8,10 @@ def create_app() -> Flask:
     def hello() -> str:
         return "hello world"
 
+    @app.get("/add/<int:a>/<int:b>")
+    def add(a: int, b: int) -> str:
+        return str(a + b)
+
     return app
 
 
