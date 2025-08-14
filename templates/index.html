@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>World Clock</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+      line-height: 1.5;
+      display: grid;
+      min-height: 100vh;
+      place-items: center;
+      background: canvas;
+      color: canvastext;
+    }
+    main { width: min(900px, 92vw); padding: 2rem; }
+    h1 { margin: 0 0 1rem; font-size: 2rem; text-align: center; }
+    ul.clocks {
+      list-style: none;
+      padding: 0;
+      margin: 1rem 0 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+    li {
+      border: 1px solid color-mix(in oklab, canvastext 20%, canvas 80%);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+      background: color-mix(in oklab, canvas 96%, canvastext 4%);
+    }
+    h2 { margin: 0 0 .5rem; font-size: 1.1rem; font-weight: 600; }
+    .time { font-variant-numeric: tabular-nums; font-size: 2rem; letter-spacing: 0.02em; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>World Clock</h1>
+    <ul class="clocks">
+      <li>
+        <h2>UK (London)</h2>
+        <div class="time" id="clock-london">--:--:--</div>
+      </li>
+      <li>
+        <h2>New York City</h2>
+        <div class="time" id="clock-nyc">--:--:--</div>
+      </li>
+      <li>
+        <h2>Beijing</h2>
+        <div class="time" id="clock-beijing">--:--:--</div>
+      </li>
+    </ul>
+  </main>
+  <script>
+    const zones = [
+      { id: 'clock-london', tz: 'Europe/London' },
+      { id: 'clock-nyc', tz: 'America/New_York' },
+      { id: 'clock-beijing', tz: 'Asia/Shanghai' }, // Beijing uses Asia/Shanghai
+    ];
+
+    function formatInZone(ms, timeZone) {
+      return new Intl.DateTimeFormat([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        timeZone,
+      }).format(ms);
+    }
+
+    function tick() {
+      const now = Date.now();
+      for (const { id, tz } of zones) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        try {
+          el.textContent = formatInZone(now, tz);
+        } catch {
+          el.textContent = 'Unsupported timezone';
+        }
+      }
+    }
+
+    tick();
+    setInterval(tick, 1000);
+  </script>
+</body>
+</html>
