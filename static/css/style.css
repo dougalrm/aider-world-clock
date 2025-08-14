@@ -379,9 +379,9 @@ h1 {
 
 /* Buttons: brighter neon */
 .btn {
-  background:
-    radial-gradient(60% 120% at 50% -30%, color-mix(in oklab, var(--ring) 25%, transparent), transparent 60%),
-    color-mix(in oklab, var(--ring) 12%, transparent);
+  background-image:
+    radial-gradient(60% 120% at 50% -30%, color-mix(in oklab, var(--ring) 25%, transparent), transparent 60%);
+  background-color: color-mix(in oklab, var(--ring) 12%, transparent);
   border-color: color-mix(in oklab, var(--ring) 50%, transparent);
   box-shadow:
     0 0 14px color-mix(in oklab, var(--ring) 35%, transparent),
@@ -416,7 +416,9 @@ h1 {
   100% { filter: drop-shadow(0 0 14px color-mix(in oklab, var(--lime) 45%, transparent)); }
 }
 @keyframes subtleFlicker {
-  0%, 97%, 100% { opacity: 1; }
+  0% { opacity: 1; }
+  97% { opacity: 1; }
   98% { opacity: .92; }
   99% { opacity: .85; }
+  100% { opacity: 1; }
 }
