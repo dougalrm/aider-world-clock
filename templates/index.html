@@ -264,11 +264,27 @@
     }
     #world-map { width: 100%; height: auto; display: block; background: linear-gradient(180deg, color-mix(in oklab, var(--aqua) 3%, transparent), transparent); }
     #world-land {
-      opacity: .75;
-      filter: saturate(.7) brightness(.9) contrast(1.05);
+      opacity: .9;
+      filter: saturate(.9) brightness(1) contrast(1.05);
       mix-blend-mode: multiply;
       pointer-events: none;
     }
+    @media (prefers-color-scheme: dark) {
+      #world-land {
+        opacity: .95;
+        filter: saturate(1) brightness(1.25) contrast(1.15);
+        mix-blend-mode: screen;
+      }
+      .graticule line { stroke: color-mix(in oklab, var(--txt) 28%, transparent); }
+      .graticule line.major { stroke: color-mix(in oklab, var(--txt) 40%, transparent); }
+    }
+    html[data-theme="dark"] #world-land {
+      opacity: .95;
+      filter: saturate(1) brightness(1.25) contrast(1.15);
+      mix-blend-mode: screen;
+    }
+    html[data-theme="dark"] .graticule line { stroke: color-mix(in oklab, var(--txt) 28%, transparent); }
+    html[data-theme="dark"] .graticule line.major { stroke: color-mix(in oklab, var(--txt) 40%, transparent); }
     .graticule line {
       stroke: color-mix(in oklab, var(--txt) 18%, transparent);
       stroke-width: 1;
@@ -332,7 +348,7 @@
       </div>
       <div class="map-wrap">
         <svg id="world-map" viewBox="0 0 1200 600" role="img" aria-label="World map with selectable cities">
-          <image id="world-land" href="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/World_map_-_low_resolution.svg/1200px-World_map_-_low_resolution.svg.png" x="0" y="0" width="1200" height="600" preserveAspectRatio="none" />
+          <image id="world-land" href="https://upload.wikimedia.org/wikipedia/commons/8/80/Equirectangular_projection_SW.jpg" x="0" y="0" width="1200" height="600" preserveAspectRatio="none" />
           <g class="graticule" id="graticule"></g>
           <g id="cities-layer"></g>
         </svg>
