@@ -256,31 +256,38 @@
     .map-section { margin: 1rem 0 1.5rem; }
     .map-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem; color: var(--sub); font-size: .95rem; }
     .map-wrap {
+      position: relative;
       border: 1px solid var(--card-bd);
       background: color-mix(in oklab, var(--bg-1) 50%, transparent);
       border-radius: 14px;
       overflow: hidden;
       box-shadow: 0 10px 30px -12px rgba(0,0,0,.25);
     }
-    #world-map { width: 100%; height: auto; display: block; background: linear-gradient(180deg, color-mix(in oklab, var(--aqua) 3%, transparent), transparent); }
-    #world-land {
+    #world-map { position: relative; z-index: 1; width: 100%; height: auto; display: block; background: linear-gradient(180deg, color-mix(in oklab, var(--aqua) 3%, transparent), transparent); }
+    #world-land-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
       opacity: .9;
-      filter: saturate(.9) brightness(1) contrast(1.05);
+      filter: saturate(.9) brightness(1.05) contrast(1.1);
       mix-blend-mode: multiply;
       pointer-events: none;
+      z-index: 0;
     }
     @media (prefers-color-scheme: dark) {
-      #world-land {
+      #world-land-img {
         opacity: .95;
-        filter: saturate(1) brightness(1.25) contrast(1.15);
+        filter: saturate(1.05) brightness(1.25) contrast(1.2);
         mix-blend-mode: screen;
       }
       .graticule line { stroke: color-mix(in oklab, var(--txt) 28%, transparent); }
       .graticule line.major { stroke: color-mix(in oklab, var(--txt) 40%, transparent); }
     }
-    html[data-theme="dark"] #world-land {
+    html[data-theme="dark"] #world-land-img {
       opacity: .95;
-      filter: saturate(1) brightness(1.25) contrast(1.15);
+      filter: saturate(1.05) brightness(1.25) contrast(1.2);
       mix-blend-mode: screen;
     }
     html[data-theme="dark"] .graticule line { stroke: color-mix(in oklab, var(--txt) 28%, transparent); }
@@ -347,8 +354,9 @@
         <span>Click a city to add/remove it</span>
       </div>
       <div class="map-wrap">
+        <img id="world-land-img" alt="" src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Equirectangular_projection_SW.jpg/2048px-Equirectangular_projection_SW.jpg" width="1200" height="600" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Equirectangular_projection_SW.jpg/1200px-Equirectangular_projection_SW.jpg';">
         <svg id="world-map" viewBox="0 0 1200 600" role="img" aria-label="World map with selectable cities">
-          <image id="world-land" href="https://upload.wikimedia.org/wikipedia/commons/8/80/Equirectangular_projection_SW.jpg" x="0" y="0" width="1200" height="600" preserveAspectRatio="none" />
+          <!-- world map raster moved to HTML img layer -->
           <g class="graticule" id="graticule"></g>
           <g id="cities-layer"></g>
         </svg>
