@@ -251,6 +251,50 @@
       place-items: center;
     }
     .remove-btn:hover { filter: brightness(1.15) saturate(1.25); }
+
+    /* Map section */
+    .map-section { margin: 1rem 0 1.5rem; }
+    .map-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem; color: var(--sub); font-size: .95rem; }
+    .map-wrap {
+      border: 1px solid var(--card-bd);
+      background: color-mix(in oklab, var(--bg-1) 50%, transparent);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px -12px rgba(0,0,0,.25);
+    }
+    #world-map { width: 100%; height: auto; display: block; background: linear-gradient(180deg, color-mix(in oklab, var(--aqua) 3%, transparent), transparent); }
+    .graticule line {
+      stroke: color-mix(in oklab, var(--txt) 18%, transparent);
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+    .graticule line.major {
+      stroke: color-mix(in oklab, var(--txt) 28%, transparent);
+    }
+    .city { cursor: pointer; }
+    .city .halo {
+      fill: none;
+      stroke: color-mix(in oklab, var(--accent) 40%, transparent);
+      stroke-width: 8;
+      opacity: 0;
+    }
+    .city.selected .halo { opacity: .8; }
+    .city .dot {
+      fill: color-mix(in oklab, var(--accent) 70%, transparent);
+      stroke: color-mix(in oklab, var(--bg-1) 60%, transparent);
+      stroke-width: 1.5;
+      vector-effect: non-scaling-stroke;
+      filter: drop-shadow(0 0 6px color-mix(in oklab, var(--accent) 50%, transparent));
+    }
+    .city.selected .dot { stroke-width: 2; }
+    .city .label {
+      fill: var(--txt);
+      font-size: 12px;
+      paint-order: stroke;
+      stroke: color-mix(in oklab, var(--bg-1) 60%, transparent);
+      stroke-width: 3px;
+    }
+    .tz-label { fill: var(--sub); font-size: 10px; }
   </style>
 </head>
 <body>
@@ -274,6 +318,19 @@
       <h1>World Clock</h1>
       <p class="subtitle">Crisp, neon clocks for key cities. Updates every second.</p>
     </header>
+
+    <section class="map-section" aria-labelledby="map-title">
+      <div class="map-header">
+        <strong id="map-title">World map</strong>
+        <span>Click a city to add/remove it</span>
+      </div>
+      <div class="map-wrap">
+        <svg id="world-map" viewBox="0 0 1200 600" role="img" aria-label="World map with selectable cities">
+          <g class="graticule" id="graticule"></g>
+          <g id="cities-layer"></g>
+        </svg>
+      </div>
+    </section>
 
     <ul class="clocks" role="list" id="clocks">
     </ul>
@@ -364,6 +421,167 @@
       const STORAGE_KEY = 'worldclock.clocks.v1';
       const accents = ['accent-aqua', 'accent-pink', 'accent-lime'];
 
+      const curatedCities = [
+        { name: 'London', tz: 'Europe/London', lat: 51.5074, lon: -0.1278 },
+        { name: 'New York', tz: 'America/New_York', lat: 40.7128, lon: -74.0060 },
+        { name: 'Beijing', tz: 'Asia/Shanghai', lat: 39.9042, lon: 116.4074 },
+        { name: 'Paris', tz: 'Europe/Paris', lat: 48.8566, lon: 2.3522 },
+        { name: 'Tokyo', tz: 'Asia/Tokyo', lat: 35.6895, lon: 139.6917 },
+        { name: 'Sydney', tz: 'Australia/Sydney', lat: -33.8688, lon: 151.2093 },
+        { name: 'Los Angeles', tz: 'America/Los_Angeles', lat: 34.0522, lon: -118.2437 },
+        { name: 'Chicago', tz: 'America/Chicago', lat: 41.8781, lon: -87.6298 },
+        { name: 'Berlin', tz: 'Europe/Berlin', lat: 52.52, lon: 13.405 },
+        { name: 'Mumbai', tz: 'Asia/Kolkata', lat: 19.076, lon: 72.8777 },
+        { name: 'Dubai', tz: 'Asia/Dubai', lat: 25.2048, lon: 55.2708 },
+        { name: 'Singapore', tz: 'Asia/Singapore', lat: 1.3521, lon: 103.8198 },
+        { name: 'Johannesburg', tz: 'Africa/Johannesburg', lat: -26.2041, lon: 28.0473 },
+        { name: 'Mexico City', tz: 'America/Mexico_City', lat: 19.4326, lon: -99.1332 },
+        { name: 'São Paulo', tz: 'America/Sao_Paulo', lat: -23.5505, lon: -46.6333 },
+        { name: 'Moscow', tz: 'Europe/Moscow', lat: 55.7558, lon: 37.6173 },
+        { name: 'Auckland', tz: 'Pacific/Auckland', lat: -36.8485, lon: 174.7633 },
+      ];
+
+      const MAP_W = 1200, MAP_H = 600;
+
+      function project(lon, lat) {
+        const x = (lon + 180) / 360 * MAP_W;
+        const y = (90 - lat) / 180 * MAP_H;
+        return [x, y];
+      }
+
+      function accentForIndex(i) {
+        return accents[i % accents.length];
+      }
+
+      function isInClocks(tz) {
+        return clocks.some(c => c.tz === tz);
+      }
+
+      function initMap() {
+        const svg = document.getElementById('world-map');
+        if (!svg) return;
+        const grat = document.getElementById('graticule');
+        const citiesLayer = document.getElementById('cities-layer');
+
+        // Draw graticule once
+        if (grat && grat.childElementCount === 0) {
+          const ns = 'http://www.w3.org/2000/svg';
+          for (let lon = -180; lon <= 180; lon += 30) {
+            const x = (lon + 180) / 360 * MAP_W;
+            const line = document.createElementNS(ns, 'line');
+            line.setAttribute('x1', String(x));
+            line.setAttribute('y1', '0');
+            line.setAttribute('x2', String(x));
+            line.setAttribute('y2', String(MAP_H));
+            if (lon % 90 === 0) line.classList.add('major');
+            grat.appendChild(line);
+          }
+          for (let lat = -60; lat <= 60; lat += 30) {
+            const y = (90 - lat) / 180 * MAP_H;
+            const line = document.createElementNS(ns, 'line');
+            line.setAttribute('x1', '0');
+            line.setAttribute('y1', String(y));
+            line.setAttribute('x2', String(MAP_W));
+            line.setAttribute('y2', String(y));
+            if (lat === 0) line.classList.add('major');
+            grat.appendChild(line);
+          }
+        }
+
+        // Draw cities once
+        if (citiesLayer && citiesLayer.childElementCount === 0) {
+          const ns = 'http://www.w3.org/2000/svg';
+          curatedCities.forEach((c, i) => {
+            const [x, y] = project(c.lon, c.lat);
+            const g = document.createElementNS(ns, 'g');
+            g.classList.add('city', accentForIndex(i));
+            g.setAttribute('data-tz', c.tz);
+            g.setAttribute('data-name', c.name);
+
+            const halo = document.createElementNS(ns, 'circle');
+            halo.setAttribute('class', 'halo');
+            halo.setAttribute('cx', String(x));
+            halo.setAttribute('cy', String(y));
+            halo.setAttribute('r', '7');
+
+            const dot = document.createElementNS(ns, 'circle');
+            dot.setAttribute('class', 'dot');
+            dot.setAttribute('cx', String(x));
+            dot.setAttribute('cy', String(y));
+            dot.setAttribute('r', '3.5');
+
+            const label = document.createElementNS(ns, 'text');
+            label.setAttribute('class', 'label');
+            label.setAttribute('x', String(x + (x > MAP_W / 2 ? -8 : 8)));
+            label.setAttribute('y', String(y - 8));
+            label.setAttribute('text-anchor', x > MAP_W / 2 ? 'end' : 'start');
+            label.textContent = c.name;
+
+            const title = document.createElementNS(ns, 'title');
+            title.textContent = `${c.name}`;
+
+            g.appendChild(halo);
+            g.appendChild(dot);
+            g.appendChild(label);
+            g.appendChild(title);
+
+            citiesLayer.appendChild(g);
+          });
+
+          svg.addEventListener('click', (e) => {
+            const city = e.target.closest('.city');
+            if (!city) return;
+            const tz = city.getAttribute('data-tz');
+            const name = city.getAttribute('data-name') || tz;
+            if (!tz) return;
+            if (isInClocks(tz)) {
+              clocks = clocks.filter(c => c.tz !== tz);
+              saveClocks(clocks);
+              render();
+            } else {
+              const accent = accents[clocks.length % accents.length];
+              clocks.push({ tz, label: name, accent });
+              saveClocks(clocks);
+              render();
+            }
+          });
+        }
+
+        renderMapSelections();
+      }
+
+      function renderMapSelections() {
+        const citiesLayer = document.getElementById('cities-layer');
+        if (!citiesLayer) return;
+        const set = new Set(clocks.map(c => c.tz));
+        citiesLayer.querySelectorAll('.city').forEach(node => {
+          const tz = node.getAttribute('data-tz');
+          if (tz && set.has(tz)) {
+            node.classList.add('selected');
+          } else {
+            node.classList.remove('selected');
+          }
+        });
+      }
+
+      function updateMapTooltips(ms) {
+        const citiesLayer = document.getElementById('cities-layer');
+        if (!citiesLayer) return;
+        citiesLayer.querySelectorAll('.city').forEach(node => {
+          const tz = node.getAttribute('data-tz');
+          const name = node.getAttribute('data-name') || '';
+          const title = node.querySelector('title');
+          if (!tz || !title) return;
+          try {
+            const t = timeFormatter(tz).format(ms);
+            const tzName = getTimeZoneName(ms, tz);
+            title.textContent = `${name} — ${t} (${tzName})`;
+          } catch {
+            title.textContent = `${name}`;
+          }
+        });
+      }
+
       function loadClocks() {
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
@@ -442,6 +660,7 @@
           listEl.appendChild(card);
         });
         tick(); // initial draw
+        renderMapSelections();
       }
 
       // Formatting helpers
@@ -497,10 +716,12 @@
             tzEl.textContent = '';
           }
         });
+        updateMapTooltips(now);
       }
 
       let timerId;
       function start() {
+        initMap();
         render();
         clearInterval(timerId);
         timerId = setInterval(tick, 1000);
@@ -543,6 +764,7 @@
         clocks = clocks.filter(c => c.tz !== tz);
         saveClocks(clocks);
         card.remove();
+        renderMapSelections();
       });
 
       document.addEventListener('DOMContentLoaded', start);
