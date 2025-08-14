@@ -1,0 +1,309 @@
+:root {
+  --bg-0: #07070c;
+  --bg-1: #0d0f1a;
+  --txt: #e6f1ff;
+  --sub: #a3b3d3;
+
+  --aqua: #00e5ff;
+  --pink: #ff4dd2;
+  --lime: #b6ff00;
+
+  --card-bg: color-mix(in oklab, white 3%, transparent);
+  --card-bd: color-mix(in oklab, var(--txt) 18%, transparent);
+  --ring: #6ae3ff;
+  color-scheme: dark light;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-0: #fafbff;
+    --bg-1: #f3f7ff;
+    --txt: #0b132b;
+    --sub: #3d4a69;
+    --card-bg: color-mix(in oklab, black 2%, transparent);
+    --card-bd: color-mix(in oklab, black 10%, transparent);
+    --ring: #0088ff;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  color: var(--txt);
+  background:
+    radial-gradient(1200px 800px at 80% -20%, color-mix(in oklab, var(--pink) 22%, transparent) 0%, transparent 60%),
+    radial-gradient(1000px 700px at -10% 120%, color-mix(in oklab, var(--aqua) 22%, transparent) 0%, transparent 60%),
+    linear-gradient(180deg, var(--bg-0), var(--bg-1));
+  display: grid;
+  place-items: center;
+  line-height: 1.5;
+}
+
+main {
+  width: min(1000px, 92vw);
+  padding: 2rem;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+h1 {
+  margin: 0 0 .25rem;
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  background: linear-gradient(90deg, var(--aqua), var(--pink), var(--lime));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 6px color-mix(in oklab, var(--aqua) 30%, transparent));
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--sub);
+  font-size: .95rem;
+}
+
+.clocks {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  position: relative;
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  background: var(--card-bg);
+  border: 1px solid var(--card-bd);
+  backdrop-filter: saturate(140%) blur(8px);
+  -webkit-backdrop-filter: saturate(140%) blur(8px);
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  outline: none;
+}
+
+.card:focus-within {
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent),
+    0 0 40px -10px color-mix(in oklab, var(--ring) 40%, transparent);
+  border-color: color-mix(in oklab, var(--ring) 40%, var(--card-bd));
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 30px -12px rgba(0,0,0,.35),
+    0 0 24px -8px color-mix(in oklab, var(--accent) 55%, transparent);
+}
+
+h2 {
+  margin: 0 0 .35rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: .5rem;
+  color: var(--txt);
+  text-shadow:
+    0 0 6px color-mix(in oklab, var(--accent) 35%, transparent),
+    0 0 16px color-mix(in oklab, var(--accent) 25%, transparent);
+}
+
+.tz {
+  font-size: .8rem;
+  color: var(--sub);
+  background: color-mix(in oklab, var(--accent) 18%, transparent);
+  border: 1px solid color-mix(in oklab, var(--accent) 40%, transparent);
+  padding: .1rem .5rem;
+  border-radius: 999px;
+}
+
+.time {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "ss01" 1;
+  font-size: clamp(2rem, 5.5vw, 3rem);
+  letter-spacing: 0.04em;
+  text-align: center;
+  line-height: 1.2;
+  color: var(--txt);
+  text-shadow:
+    0 0 12px color-mix(in oklab, var(--accent) 40%, transparent),
+    0 0 28px color-mix(in oklab, var(--accent) 25%, transparent);
+}
+
+.date {
+  margin-top: .35rem;
+  font-size: .95rem;
+  color: var(--sub);
+  text-align: center;
+}
+
+/* Accent colors per city */
+.accent-aqua { --accent: var(--aqua); }
+.accent-pink { --accent: var(--pink); }
+.accent-lime { --accent: var(--lime); }
+
+@media (prefers-reduced-motion: reduce) {
+  .card { transition: none; }
+  .card:hover { transform: none; box-shadow: none; }
+}
+
+/* Theme override via user toggle */
+html[data-theme="dark"] {
+  --bg-0: #07070c;
+  --bg-1: #0d0f1a;
+  --txt: #e6f1ff;
+  --sub: #a3b3d3;
+  --card-bg: color-mix(in oklab, white 3%, transparent);
+  --card-bd: color-mix(in oklab, var(--txt) 18%, transparent);
+  --ring: #6ae3ff;
+  color-scheme: dark;
+}
+html[data-theme="light"] {
+  --bg-0: #fafbff;
+  --bg-1: #f3f7ff;
+  --txt: #0b132b;
+  --sub: #3d4a69;
+  --card-bg: color-mix(in oklab, black 2%, transparent);
+  --card-bd: color-mix(in oklab, black 10%, transparent);
+  --ring: #0088ff;
+  color-scheme: light;
+}
+
+/* Toolbar and controls */
+.toolbar {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+  padding: .5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--card-bd);
+  border-radius: 999px;
+  backdrop-filter: saturate(140%) blur(8px);
+  -webkit-backdrop-filter: saturate(140%) blur(8px);
+  z-index: 1000;
+}
+.add-clock { display: flex; gap: .5rem; align-items: center; }
+.btn {
+  appearance: none;
+  border: 1px solid color-mix(in oklab, var(--ring) 30%, transparent);
+  background: color-mix(in oklab, var(--ring) 10%, transparent);
+  color: var(--txt);
+  padding: .4rem .75rem;
+  border-radius: 999px;
+  font: inherit;
+  cursor: pointer;
+  transition: filter .15s ease, transform .05s ease, border-color .2s ease;
+}
+.btn:hover { filter: brightness(1.1) saturate(1.2); }
+.btn:active { transform: translateY(1px); }
+
+.input {
+  border: 1px solid var(--card-bd);
+  background: color-mix(in oklab, var(--bg-1) 40%, transparent);
+  color: var(--txt);
+  padding: .4rem .6rem;
+  border-radius: 999px;
+  min-width: 14ch;
+}
+
+.remove-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--accent) 50%, transparent);
+  background: color-mix(in oklab, var(--accent) 20%, transparent);
+  color: var(--txt);
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+.remove-btn:hover { filter: brightness(1.15) saturate(1.25); }
+
+/* Map section */
+.map-section { margin: 1rem 0 1.5rem; }
+.map-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem; color: var(--sub); font-size: .95rem; }
+.map-wrap {
+  position: relative;
+  border: 1px solid var(--card-bd);
+  background: color-mix(in oklab, var(--bg-1) 50%, transparent);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px -12px rgba(0,0,0,.25);
+}
+#world-map { position: relative; z-index: 1; width: 100%; height: auto; display: block; background: linear-gradient(180deg, color-mix(in oklab, var(--aqua) 3%, transparent), transparent); }
+/* Land shapes rendered in SVG */
+#land-layer path {
+  fill: color-mix(in oklab, var(--txt) 10%, transparent);
+  stroke: color-mix(in oklab, var(--txt) 25%, transparent);
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+@media (prefers-color-scheme: dark) {
+  #land-layer path {
+    fill: color-mix(in oklab, var(--txt) 14%, transparent);
+    stroke: color-mix(in oklab, var(--txt) 35%, transparent);
+  }
+  .graticule line { stroke: color-mix(in oklab, var(--txt) 28%, transparent); }
+  .graticule line.major { stroke: color-mix(in oklab, var(--txt) 40%, transparent); }
+}
+html[data-theme="dark"] #land-layer path {
+  fill: color-mix(in oklab, var(--txt) 14%, transparent);
+  stroke: color-mix(in oklab, var(--txt) 35%, transparent);
+}
+html[data-theme="dark"] .graticule line { stroke: color-mix(in oklab, var(--txt) 28%, transparent); }
+html[data-theme="dark"] .graticule line.major { stroke: color-mix(in oklab, var(--txt) 40%, transparent); }
+.graticule line {
+  stroke: color-mix(in oklab, var(--txt) 18%, transparent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.graticule line.major {
+  stroke: color-mix(in oklab, var(--txt) 28%, transparent);
+}
+.city { cursor: pointer; }
+.city .halo {
+  fill: none;
+  stroke: color-mix(in oklab, var(--accent) 40%, transparent);
+  stroke-width: 8;
+  opacity: 0;
+}
+.city.selected .halo { opacity: .8; }
+.city .dot {
+  fill: color-mix(in oklab, var(--accent) 70%, transparent);
+  stroke: color-mix(in oklab, var(--bg-1) 60%, transparent);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 6px color-mix(in oklab, var(--accent) 50%, transparent));
+}
+.city.selected .dot { stroke-width: 2; }
+.city .label {
+  fill: var(--txt);
+  font-size: 12px;
+  paint-order: stroke;
+  stroke: color-mix(in oklab, var(--bg-1) 60%, transparent);
+  stroke-width: 3px;
+}
+.tz-label { fill: var(--sub); font-size: 10px; }
