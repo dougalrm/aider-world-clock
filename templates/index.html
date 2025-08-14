@@ -325,12 +325,6 @@
     <form id="add-clock-form" class="add-clock" autocomplete="off">
       <input id="tz-input" name="tz" list="tz-list" class="input" placeholder="Add timezone e.g. Europe/Paris" required>
       <datalist id="tz-list">
-        <option value="Europe/London"></option>
-        <option value="America/New_York"></option>
-        <option value="Asia/Shanghai"></option>
-        <option value="Europe/Paris"></option>
-        <option value="Asia/Tokyo"></option>
-        <option value="Australia/Sydney"></option>
       </datalist>
       <button class="btn" type="submit" aria-label="Add clock">Add</button>
     </form>
@@ -446,24 +440,83 @@
       const STORAGE_KEY = 'worldclock.clocks.v1';
       const accents = ['accent-aqua', 'accent-pink', 'accent-lime'];
 
-      const curatedCities = [
+      // Key cities rendered on the map (kept minimal to avoid label overlap)
+      const keyCities = [
         { name: 'London', tz: 'Europe/London', lat: 51.5074, lon: -0.1278 },
         { name: 'New York', tz: 'America/New_York', lat: 40.7128, lon: -74.0060 },
         { name: 'Beijing', tz: 'Asia/Shanghai', lat: 39.9042, lon: 116.4074 },
-        { name: 'Paris', tz: 'Europe/Paris', lat: 48.8566, lon: 2.3522 },
         { name: 'Tokyo', tz: 'Asia/Tokyo', lat: 35.6895, lon: 139.6917 },
         { name: 'Sydney', tz: 'Australia/Sydney', lat: -33.8688, lon: 151.2093 },
-        { name: 'Los Angeles', tz: 'America/Los_Angeles', lat: 34.0522, lon: -118.2437 },
-        { name: 'Chicago', tz: 'America/Chicago', lat: 41.8781, lon: -87.6298 },
-        { name: 'Berlin', tz: 'Europe/Berlin', lat: 52.52, lon: 13.405 },
-        { name: 'Mumbai', tz: 'Asia/Kolkata', lat: 19.076, lon: 72.8777 },
+        { name: 'Paris', tz: 'Europe/Paris', lat: 48.8566, lon: 2.3522 },
         { name: 'Dubai', tz: 'Asia/Dubai', lat: 25.2048, lon: 55.2708 },
-        { name: 'Singapore', tz: 'Asia/Singapore', lat: 1.3521, lon: 103.8198 },
-        { name: 'Johannesburg', tz: 'Africa/Johannesburg', lat: -26.2041, lon: 28.0473 },
-        { name: 'Mexico City', tz: 'America/Mexico_City', lat: 19.4326, lon: -99.1332 },
         { name: 'São Paulo', tz: 'America/Sao_Paulo', lat: -23.5505, lon: -46.6333 },
-        { name: 'Moscow', tz: 'Europe/Moscow', lat: 55.7558, lon: 37.6173 },
-        { name: 'Auckland', tz: 'Pacific/Auckland', lat: -36.8485, lon: 174.7633 },
+        { name: 'Johannesburg', tz: 'Africa/Johannesburg', lat: -26.2041, lon: 28.0473 },
+      ];
+
+      // Expanded list for search/adding clocks (not all shown on map)
+      const allCities = [
+        { name: 'London', tz: 'Europe/London' },
+        { name: 'New York', tz: 'America/New_York' },
+        { name: 'Beijing', tz: 'Asia/Shanghai' },
+        { name: 'Paris', tz: 'Europe/Paris' },
+        { name: 'Tokyo', tz: 'Asia/Tokyo' },
+        { name: 'Sydney', tz: 'Australia/Sydney' },
+        { name: 'Los Angeles', tz: 'America/Los_Angeles' },
+        { name: 'Chicago', tz: 'America/Chicago' },
+        { name: 'Toronto', tz: 'America/Toronto' },
+        { name: 'Mexico City', tz: 'America/Mexico_City' },
+        { name: 'São Paulo', tz: 'America/Sao_Paulo' },
+        { name: 'Buenos Aires', tz: 'America/Buenos_Aires' },
+        { name: 'Santiago', tz: 'America/Santiago' },
+        { name: 'Bogota', tz: 'America/Bogota' },
+        { name: 'Lima', tz: 'America/Lima' },
+        { name: 'Denver', tz: 'America/Denver' },
+        { name: 'Phoenix', tz: 'America/Phoenix' },
+        { name: 'Vancouver', tz: 'America/Vancouver' },
+        { name: 'Anchorage', tz: 'America/Anchorage' },
+        { name: 'Honolulu', tz: 'Pacific/Honolulu' },
+        { name: 'Berlin', tz: 'Europe/Berlin' },
+        { name: 'Madrid', tz: 'Europe/Madrid' },
+        { name: 'Rome', tz: 'Europe/Rome' },
+        { name: 'Amsterdam', tz: 'Europe/Amsterdam' },
+        { name: 'Zurich', tz: 'Europe/Zurich' },
+        { name: 'Stockholm', tz: 'Europe/Stockholm' },
+        { name: 'Oslo', tz: 'Europe/Oslo' },
+        { name: 'Copenhagen', tz: 'Europe/Copenhagen' },
+        { name: 'Dublin', tz: 'Europe/Dublin' },
+        { name: 'Lisbon', tz: 'Europe/Lisbon' },
+        { name: 'Moscow', tz: 'Europe/Moscow' },
+        { name: 'Istanbul', tz: 'Europe/Istanbul' },
+        { name: 'Athens', tz: 'Europe/Athens' },
+        { name: 'Helsinki', tz: 'Europe/Helsinki' },
+        { name: 'Vienna', tz: 'Europe/Vienna' },
+        { name: 'Prague', tz: 'Europe/Prague' },
+        { name: 'Warsaw', tz: 'Europe/Warsaw' },
+        { name: 'Budapest', tz: 'Europe/Budapest' },
+        { name: 'Brussels', tz: 'Europe/Brussels' },
+        { name: 'Mumbai', tz: 'Asia/Kolkata' },
+        { name: 'Delhi', tz: 'Asia/Kolkata' },
+        { name: 'Karachi', tz: 'Asia/Karachi' },
+        { name: 'Dubai', tz: 'Asia/Dubai' },
+        { name: 'Riyadh', tz: 'Asia/Riyadh' },
+        { name: 'Doha', tz: 'Asia/Qatar' },
+        { name: 'Tel Aviv', tz: 'Asia/Jerusalem' },
+        { name: 'Cairo', tz: 'Africa/Cairo' },
+        { name: 'Nairobi', tz: 'Africa/Nairobi' },
+        { name: 'Lagos', tz: 'Africa/Lagos' },
+        { name: 'Casablanca', tz: 'Africa/Casablanca' },
+        { name: 'Johannesburg', tz: 'Africa/Johannesburg' },
+        { name: 'Singapore', tz: 'Asia/Singapore' },
+        { name: 'Hong Kong', tz: 'Asia/Hong_Kong' },
+        { name: 'Taipei', tz: 'Asia/Taipei' },
+        { name: 'Bangkok', tz: 'Asia/Bangkok' },
+        { name: 'Kuala Lumpur', tz: 'Asia/Kuala_Lumpur' },
+        { name: 'Jakarta', tz: 'Asia/Jakarta' },
+        { name: 'Manila', tz: 'Asia/Manila' },
+        { name: 'Seoul', tz: 'Asia/Seoul' },
+        { name: 'Auckland', tz: 'Pacific/Auckland' },
+        { name: 'Melbourne', tz: 'Australia/Melbourne' },
+        { name: 'Perth', tz: 'Australia/Perth' },
       ];
 
       const MAP_W = 1200, MAP_H = 600;
@@ -480,6 +533,22 @@
 
       function isInClocks(tz) {
         return clocks.some(c => c.tz === tz);
+      }
+
+      function populateTZList() {
+        const dl = document.getElementById('tz-list');
+        if (!dl) return;
+        dl.innerHTML = '';
+        const seen = new Set();
+        const items = allCities.slice().sort((a, b) => a.name.localeCompare(b.name));
+        for (const c of items) {
+          if (seen.has(c.tz)) continue;
+          seen.add(c.tz);
+          const opt = document.createElement('option');
+          opt.value = c.tz;
+          opt.label = `${c.name} — ${c.tz}`;
+          dl.appendChild(opt);
+        }
       }
 
       async function ensureLand() {
@@ -537,8 +606,9 @@
         // Draw cities once
         if (citiesLayer && citiesLayer.childElementCount === 0) {
           const ns = 'http://www.w3.org/2000/svg';
-          curatedCities.forEach((c, i) => {
+          keyCities.forEach((c, i) => {
             const [x, y] = project(c.lon, c.lat);
+            const yOffset = (i % 3 - 1) * 6;
             const g = document.createElementNS(ns, 'g');
             g.classList.add('city', accentForIndex(i));
             g.setAttribute('data-tz', c.tz);
@@ -559,7 +629,7 @@
             const label = document.createElementNS(ns, 'text');
             label.setAttribute('class', 'label');
             label.setAttribute('x', String(x + (x > MAP_W / 2 ? -8 : 8)));
-            label.setAttribute('y', String(y - 8));
+            label.setAttribute('y', String(y - 8 + yOffset));
             label.setAttribute('text-anchor', x > MAP_W / 2 ? 'end' : 'start');
             label.textContent = c.name;
 
@@ -767,6 +837,7 @@
 
       let timerId;
       function start() {
+        populateTZList();
         initMap();
         render();
         clearInterval(timerId);
