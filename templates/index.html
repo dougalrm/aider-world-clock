@@ -171,98 +171,382 @@
       .card { transition: none; }
       .card:hover { transform: none; box-shadow: none; }
     }
+
+    /* Theme override via user toggle */
+    html[data-theme="dark"] {
+      --bg-0: #07070c;
+      --bg-1: #0d0f1a;
+      --txt: #e6f1ff;
+      --sub: #a3b3d3;
+      --card-bg: color-mix(in oklab, white 3%, transparent);
+      --card-bd: color-mix(in oklab, var(--txt) 18%, transparent);
+      --ring: #6ae3ff;
+      color-scheme: dark;
+    }
+    html[data-theme="light"] {
+      --bg-0: #fafbff;
+      --bg-1: #f3f7ff;
+      --txt: #0b132b;
+      --sub: #3d4a69;
+      --card-bg: color-mix(in oklab, black 2%, transparent);
+      --card-bd: color-mix(in oklab, black 10%, transparent);
+      --ring: #0088ff;
+      color-scheme: light;
+    }
+
+    /* Toolbar and controls */
+    .toolbar {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      gap: .5rem;
+      align-items: center;
+      padding: .5rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-bd);
+      border-radius: 999px;
+      backdrop-filter: saturate(140%) blur(8px);
+      -webkit-backdrop-filter: saturate(140%) blur(8px);
+      z-index: 1000;
+    }
+    .add-clock { display: flex; gap: .5rem; align-items: center; }
+    .btn {
+      appearance: none;
+      border: 1px solid color-mix(in oklab, var(--ring) 30%, transparent);
+      background: color-mix(in oklab, var(--ring) 10%, transparent);
+      color: var(--txt);
+      padding: .4rem .75rem;
+      border-radius: 999px;
+      font: inherit;
+      cursor: pointer;
+      transition: filter .15s ease, transform .05s ease, border-color .2s ease;
+    }
+    .btn:hover { filter: brightness(1.1) saturate(1.2); }
+    .btn:active { transform: translateY(1px); }
+
+    .input {
+      border: 1px solid var(--card-bd);
+      background: color-mix(in oklab, var(--bg-1) 40%, transparent);
+      color: var(--txt);
+      padding: .4rem .6rem;
+      border-radius: 999px;
+      min-width: 14ch;
+    }
+
+    .remove-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in oklab, var(--accent) 50%, transparent);
+      background: color-mix(in oklab, var(--accent) 20%, transparent);
+      color: var(--txt);
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1;
+      display: grid;
+      place-items: center;
+    }
+    .remove-btn:hover { filter: brightness(1.15) saturate(1.25); }
   </style>
 </head>
 <body>
+  <div class="toolbar" role="region" aria-label="Controls">
+    <button id="theme-toggle" class="btn" type="button" aria-label="Toggle color theme" title="Theme: System">System</button>
+    <form id="add-clock-form" class="add-clock" autocomplete="off">
+      <input id="tz-input" name="tz" list="tz-list" class="input" placeholder="Add timezone e.g. Europe/Paris" required>
+      <datalist id="tz-list">
+        <option value="Europe/London"></option>
+        <option value="America/New_York"></option>
+        <option value="Asia/Shanghai"></option>
+        <option value="Europe/Paris"></option>
+        <option value="Asia/Tokyo"></option>
+        <option value="Australia/Sydney"></option>
+      </datalist>
+      <button class="btn" type="submit" aria-label="Add clock">Add</button>
+    </form>
+  </div>
   <main>
     <header>
       <h1>World Clock</h1>
       <p class="subtitle">Crisp, neon clocks for key cities. Updates every second.</p>
     </header>
 
-    <ul class="clocks" role="list">
-      <li class="card accent-aqua" tabindex="0" aria-label="UK London clock">
-        <h2>UK (London) <span class="tz" id="clock-london-tz">—</span></h2>
-        <div class="time" id="clock-london" aria-live="polite" aria-atomic="true">--:--:--</div>
-        <div class="date" id="clock-london-date">—</div>
-      </li>
-
-      <li class="card accent-pink" tabindex="0" aria-label="New York City clock">
-        <h2>New York City <span class="tz" id="clock-nyc-tz">—</span></h2>
-        <div class="time" id="clock-nyc" aria-live="polite" aria-atomic="true">--:--:--</div>
-        <div class="date" id="clock-nyc-date">—</div>
-      </li>
-
-      <li class="card accent-lime" tabindex="0" aria-label="Beijing clock">
-        <h2>Beijing <span class="tz" id="clock-beijing-tz">—</span></h2>
-        <div class="time" id="clock-beijing" aria-live="polite" aria-atomic="true">--:--:--</div>
-        <div class="date" id="clock-beijing-date">—</div>
-      </li>
+    <ul class="clocks" role="list" id="clocks">
     </ul>
+
+    <template id="clock-card-template">
+      <li class="card accent-aqua clock-card" tabindex="0">
+        <button class="remove-btn" type="button" aria-label="Remove clock" title="Remove clock">×</button>
+        <h2><span class="label">City</span> <span class="tz">—</span></h2>
+        <div class="time" aria-live="polite" aria-atomic="true">--:--:--</div>
+        <div class="date">—</div>
+      </li>
+    </template>
   </main>
 
   <script>
-    const zones = [
-      { id: 'clock-london', tz: 'Europe/London' },
-      { id: 'clock-nyc', tz: 'America/New_York' },
-      { id: 'clock-beijing', tz: 'Asia/Shanghai' }, // Beijing uses Asia/Shanghai
-    ];
+    // Theme handling
+    (() => {
+      const THEME_KEY = 'worldclock.theme';
+      const root = document.documentElement;
+      const toggleBtn = () => document.getElementById('theme-toggle');
 
-    const timeFormatter = (timeZone) =>
-      new Intl.DateTimeFormat([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-        timeZone,
-      });
-
-    const dateFormatter = (timeZone) =>
-      new Intl.DateTimeFormat([], {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: '2-digit',
-        timeZone,
-      });
-
-    const tzNameFormatter = (timeZone) =>
-      new Intl.DateTimeFormat([], {
-        timeZone,
-        timeZoneName: 'short',
-      });
-
-    function getTimeZoneNameParts(ms, timeZone) {
-      try {
-        const parts = tzNameFormatter(timeZone).formatToParts(ms);
-        const tzPart = parts.find(p => p.type === 'timeZoneName');
-        return tzPart?.value ?? '';
-      } catch {
-        return '';
+      function getStoredTheme() {
+        return localStorage.getItem(THEME_KEY) || 'system';
       }
-    }
-
-    function tick() {
-      const now = Date.now();
-      for (const { id, tz } of zones) {
-        const timeEl = document.getElementById(id);
-        const dateEl = document.getElementById(id + '-date');
-        const tzEl = document.getElementById(id + '-tz');
-        if (!timeEl) continue;
-        try {
-          timeEl.textContent = timeFormatter(tz).format(now);
-          if (dateEl) dateEl.textContent = dateFormatter(tz).format(now);
-          if (tzEl) tzEl.textContent = getTimeZoneNameParts(now, tz);
-        } catch {
-          timeEl.textContent = 'Unsupported timezone';
-          if (dateEl) dateEl.textContent = '';
-          if (tzEl) tzEl.textContent = '';
+      function getSystemTheme() {
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      function applyTheme(pref) {
+        if (pref === 'system') {
+          root.removeAttribute('data-theme');
+          updateThemeMeta(getSystemTheme());
+          updateToggleLabel('System');
+        } else {
+          root.setAttribute('data-theme', pref);
+          updateThemeMeta(pref);
+          updateToggleLabel(pref.charAt(0).toUpperCase() + pref.slice(1));
         }
       }
-    }
+      function updateToggleLabel(label) {
+        const btn = toggleBtn();
+        if (btn) {
+          btn.textContent = label;
+          btn.title = 'Theme: ' + label;
+        }
+      }
+      function updateThemeMeta(theme) {
+        const darkColor = '#0d0f1a';
+        const lightColor = '#f3f7ff';
+        let meta = document.querySelector('meta[name="theme-color"]:not([media])');
+        if (theme === 'system') {
+          if (meta) meta.parentElement.removeChild(meta);
+          return;
+        }
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.setAttribute('name', 'theme-color');
+          document.head.appendChild(meta);
+        }
+        meta.setAttribute('content', theme === 'dark' ? darkColor : lightColor);
+      }
 
-    tick();
-    setInterval(tick, 1000);
+      function setup() {
+        const stored = getStoredTheme();
+        applyTheme(stored);
+        const btn = toggleBtn();
+        if (btn) {
+          btn.addEventListener('click', () => {
+            const current = getStoredTheme();
+            const next = current === 'system' ? 'light' : current === 'light' ? 'dark' : 'system';
+            localStorage.setItem(THEME_KEY, next);
+            applyTheme(next);
+          });
+        }
+        if (window.matchMedia) {
+          const mql = window.matchMedia('(prefers-color-scheme: dark)');
+          mql.addEventListener?.('change', () => {
+            if (getStoredTheme() === 'system') {
+              applyTheme('system');
+            }
+          });
+        }
+      }
+      document.addEventListener('DOMContentLoaded', setup);
+    })();
+
+    // Clocks handling
+    (() => {
+      const STORAGE_KEY = 'worldclock.clocks.v1';
+      const accents = ['accent-aqua', 'accent-pink', 'accent-lime'];
+
+      function loadClocks() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed;
+          }
+        } catch {}
+        return [
+          { tz: 'Europe/London', label: 'UK (London)', accent: accents[0] },
+          { tz: 'America/New_York', label: 'New York City', accent: accents[1] },
+          { tz: 'Asia/Shanghai', label: 'Beijing', accent: accents[2] },
+        ];
+      }
+      function saveClocks(clocks) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(clocks));
+      }
+
+      let clocks = loadClocks();
+      const listEl = document.getElementById('clocks');
+
+      function niceLabelFromTZ(tz) {
+        const parts = tz.split('/');
+        const city = parts[parts.length - 1]?.replace(/_/g, ' ') || tz;
+        return city;
+      }
+
+      function createCard({ tz, label, accent }) {
+        const li = document.createElement('li');
+        li.className = `card ${accent} clock-card`;
+        li.tabIndex = 0;
+        li.dataset.tz = tz;
+
+        const remove = document.createElement('button');
+        remove.className = 'remove-btn';
+        remove.type = 'button';
+        remove.title = 'Remove clock';
+        remove.setAttribute('aria-label', 'Remove clock');
+        remove.textContent = '×';
+
+        const h2 = document.createElement('h2');
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'label';
+        labelSpan.textContent = label || niceLabelFromTZ(tz);
+        const tzSpan = document.createElement('span');
+        tzSpan.className = 'tz';
+        tzSpan.textContent = '—';
+        h2.appendChild(labelSpan);
+        h2.append(' ');
+        h2.appendChild(tzSpan);
+
+        const time = document.createElement('div');
+        time.className = 'time';
+        time.setAttribute('aria-live', 'polite');
+        time.setAttribute('aria-atomic', 'true');
+        time.textContent = '--:--:--';
+
+        const date = document.createElement('div');
+        date.className = 'date';
+        date.textContent = '—';
+
+        li.appendChild(remove);
+        li.appendChild(h2);
+        li.appendChild(time);
+        li.appendChild(date);
+        return li;
+      }
+
+      function render() {
+        if (!listEl) return;
+        listEl.innerHTML = '';
+        clocks.forEach((c, i) => {
+          // Ensure accent assignment cycles and is stable
+          if (!c.accent) c.accent = accents[i % accents.length];
+          const card = createCard(c);
+          listEl.appendChild(card);
+        });
+        tick(); // initial draw
+      }
+
+      // Formatting helpers
+      const timeFormatter = (timeZone) =>
+        new Intl.DateTimeFormat([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false,
+          timeZone,
+        });
+
+      const dateFormatter = (timeZone) =>
+        new Intl.DateTimeFormat([], {
+          weekday: 'short',
+          year: 'numeric',
+          month: 'short',
+          day: '2-digit',
+          timeZone,
+        });
+
+      const tzNameFormatter = (timeZone) =>
+        new Intl.DateTimeFormat([], {
+          timeZone,
+          timeZoneName: 'short',
+        });
+
+      function getTimeZoneName(ms, timeZone) {
+        try {
+          const parts = tzNameFormatter(timeZone).formatToParts(ms);
+          const tzPart = parts.find(p => p.type === 'timeZoneName');
+          return tzPart?.value ?? '';
+        } catch {
+          return '';
+        }
+      }
+
+      function tick() {
+        const now = Date.now();
+        const cards = listEl?.querySelectorAll('.clock-card') || [];
+        cards.forEach(card => {
+          const tz = card.dataset.tz;
+          const timeEl = card.querySelector('.time');
+          const dateEl = card.querySelector('.date');
+          const tzEl = card.querySelector('.tz');
+          try {
+            timeEl.textContent = timeFormatter(tz).format(now);
+            dateEl.textContent = dateFormatter(tz).format(now);
+            tzEl.textContent = getTimeZoneName(now, tz);
+          } catch {
+            timeEl.textContent = 'Invalid timezone';
+            dateEl.textContent = '';
+            tzEl.textContent = '';
+          }
+        });
+      }
+
+      let timerId;
+      function start() {
+        render();
+        clearInterval(timerId);
+        timerId = setInterval(tick, 1000);
+      }
+
+      // Add/remove handlers
+      document.getElementById('add-clock-form')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = document.getElementById('tz-input');
+        const tz = input.value.trim();
+        if (!tz) return;
+        // Validate timezone
+        try {
+          new Intl.DateTimeFormat([], { timeZone: tz }).format(Date.now());
+        } catch {
+          input.setCustomValidity('Unknown timezone. Use a valid IANA timezone like Europe/Paris');
+          input.reportValidity();
+          input.addEventListener('input', () => input.setCustomValidity(''), { once: true });
+          return;
+        }
+        if (clocks.some(c => c.tz === tz)) {
+          input.setCustomValidity('Clock already added');
+          input.reportValidity();
+          input.addEventListener('input', () => input.setCustomValidity(''), { once: true });
+          return;
+        }
+        const accent = accents[clocks.length % accents.length];
+        clocks.push({ tz, label: niceLabelFromTZ(tz), accent });
+        saveClocks(clocks);
+        input.value = '';
+        render();
+      });
+
+      document.getElementById('clocks')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.remove-btn');
+        if (!btn) return;
+        const card = btn.closest('.clock-card');
+        const tz = card?.dataset.tz;
+        if (!tz) return;
+        clocks = clocks.filter(c => c.tz !== tz);
+        saveClocks(clocks);
+        card.remove();
+      });
+
+      document.addEventListener('DOMContentLoaded', start);
+    })();
   </script>
 </body>
 </html>
